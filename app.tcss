@@ -1,10 +1,10 @@
-Files {
+SingleFileAllCommits {
     layout: horizontal;
-    height: 5;
+    height: 50;
     margin: 1;
     min-width: 50;
     padding: 1;
 }
 
-File {
+FileDiffView {
 }
