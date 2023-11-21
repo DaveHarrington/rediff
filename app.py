@@ -1,34 +1,38 @@
 from textual.app import App, ComposeResult
 from textual.widgets import TextArea, Static
-from textual.containers import ScrollableContainer
+from textual.containers import HorizontalScroll
 
 from lib import git
 
+TEXT = """\
+def hello(name):
+    print("hello" + name)
 
-class SingleFileAllCommits(Static):
+def goodbye(name):
+    print("goodbye" + name)
+"""
+
+
+class SingleFileAllCommits(HorizontalScroll):
     def __init__(self, commits, file_data):
         super().__init__()
         self.commits = commits
         self.file_data = file_data
         self.file_views = {}
 
-    def compose(self) -> ComposeResult:
-        print(self.file_data)
+    def compose(self):
         for commit in self.commits:
             self.file_views[commit] = FileDiffView(
                 self.file_data["end_filename"],
                 commit,
             )
-        yield ScrollableContainer(*self.file_views.values())
+        yield HorizontalScroll(*self.file_views.values())
 
-class FileDiffView(Static):
+class FileDiffView(TextArea):
     def __init__(self, file_name, commit):
         super().__init__()
         self.file_name = file_name
-        self.contents = git.get_file_contents(commit, file_name)
-
-    def compose(self) -> ComposeResult:
-        yield TextArea(self.contents)
+        self.text = git.get_file_contents(commit, file_name)
 
 class Rediff(App):
     CSS_PATH = "app.tcss"
@@ -42,10 +46,9 @@ class Rediff(App):
     def compose(self) -> ComposeResult:
         self.file_views = {}
         for file_data in [self.files_history[0]]:
-            # self.file_views[file_data["end_filename"]] = SingleFileAllCommits(self.commits, file_data)
-            x = SingleFileAllCommits(self.commits, file_data)
+            file1 = SingleFileAllCommits(self.commits, file_data)
 
-        yield x
+        yield file1
 
 app = Rediff()
 if __name__ == "__main__":
