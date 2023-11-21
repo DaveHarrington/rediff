@@ -2,16 +2,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import TextArea, Static
 from textual.containers import HorizontalScroll
 
-from lib import git
-
-TEXT = """\
-def hello(name):
-    print("hello" + name)
-
-def goodbye(name):
-    print("goodbye" + name)
-"""
-
+from db import git
 
 class SingleFileAllCommits(HorizontalScroll):
     def __init__(self, commits, file_data):
@@ -21,18 +12,27 @@ class SingleFileAllCommits(HorizontalScroll):
         self.file_views = {}
 
     def compose(self):
-        for commit in self.commits:
+        for i, commit in enumerate(self.commits):
+            file_name = self.file_data["end_filename"]
+            if i == 0:
+                contents = git.get_file_contents(commit, file_name)
+            else:
+                contents = git.get_file_diff_contents(commit, file_name)
+            print(i)
+            print(commit)
+            print(contents)
+
             self.file_views[commit] = FileDiffView(
                 self.file_data["end_filename"],
-                commit,
+                contents,
             )
         yield HorizontalScroll(*self.file_views.values())
 
 class FileDiffView(TextArea):
-    def __init__(self, file_name, commit):
+    def __init__(self, file_name, contents):
         super().__init__()
         self.file_name = file_name
-        self.text = git.get_file_contents(commit, file_name)
+        self.text = contents
 
 class Rediff(App):
     CSS_PATH = "app.tcss"
