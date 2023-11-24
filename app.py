@@ -5,15 +5,14 @@ from textual.containers import HorizontalScroll
 from db import git
 
 class SingleFileAllCommits(HorizontalScroll):
-    def __init__(self, commits, file_data):
+    def __init__(self, commits, file_history):
         super().__init__()
         self.commits = commits
-        self.file_data = file_data
+        self.file_history = file_history
         self.file_views = {}
 
     def compose(self):
         for i, commit in enumerate(self.commits):
-            file_name = self.file_data["end_filename"]
             if i == 0:
                 contents = git.get_file_contents(commit, file_name)
             else:
@@ -39,13 +38,13 @@ class Rediff(App):
 
     def __init__(self):
         super().__init__()
-        base_commit = "main"
-        self.commits = git.get_commit_history(base_commit)
-        self.files_history = git.get_files_history(base_commit)
+        repo = "/Users/daveharrington/dev/checkpoint-env-control"
+        base_commit = "master"
+        self.gitdata = db.GitData(repo, base_commit)
 
     def compose(self) -> ComposeResult:
         self.file_views = {}
-        for file_data in [self.files_history[0]]:
+        for file_data in [self.gitdata.file_history(0)]:
             file1 = SingleFileAllCommits(self.commits, file_data)
 
         yield file1
