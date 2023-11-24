@@ -2,7 +2,6 @@ import click
 from collections import OrderedDict
 
 from textual.app import App, ComposeResult
-from textual.widgets import TextArea, Static
 from textual.containers import HorizontalScroll
 
 import db
