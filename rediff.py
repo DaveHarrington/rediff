@@ -2,10 +2,11 @@ import click
 from collections import OrderedDict
 
 from textual.app import App, ComposeResult
-from textual.widgets import TextArea, Static
 from textual.containers import HorizontalScroll
 
+
 import db
+from filediffview import FileDiffView
 
 class SingleFileAllCommits(HorizontalScroll):
     def __init__(self, file_history):
@@ -19,12 +20,6 @@ class SingleFileAllCommits(HorizontalScroll):
                 file_commit,
             )
         yield HorizontalScroll(*self.file_views.values())
-
-class FileDiffView(TextArea):
-    def __init__(self, file_commit):
-        super().__init__()
-        self.file_name = file_commit.file_name
-        self.text = file_commit.get_file_contents()
 
 class Rediff(App):
     CSS_PATH = "app.tcss"
