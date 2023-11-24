@@ -13,6 +13,7 @@ class SingleFileAllCommits(HorizontalScroll):
         super().__init__()
         self.file_history = file_history
         self.file_views = OrderedDict()
+        self._curr_pane = 0
 
     def compose(self):
         for file_commit in self.file_history.file_commits.values():
@@ -20,6 +21,24 @@ class SingleFileAllCommits(HorizontalScroll):
                 file_commit,
             )
         yield HorizontalScroll(*self.file_views.values())
+
+    def on_mount(self):
+        self.focus_pane(self._curr_pane)
+
+    def focus_pane(self, next_pane):
+        num_panes = len(self.file_views.keys())
+        next_pane = min(max(0, next_pane), num_panes-1)
+        list(self.file_views.values())[next_pane].focus()
+        self._curr_pane = next_pane
+
+    def on_file_diff_view_parent_command(self, command):
+        print(f"here 1: {command.cmd}")
+        if command.cmd == "focus_pane_left":
+            print("move left")
+            self.focus_pane(self._curr_pane - 1)
+        if command.cmd == "focus_pane_right":
+            print("move right")
+            self.focus_pane(self._curr_pane + 1)
 
 class Rediff(App):
     CSS_PATH = "app.tcss"
