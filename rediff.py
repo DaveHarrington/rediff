@@ -22,22 +22,16 @@ class SingleFileAllCommits(HorizontalScroll):
                 file_commit,
                 self.file_history,
             )
-            # self.file_views[file_commit.sha] = FileDiffView(
-            #     file_commit,
-            #     self.file_history.all_patches,
-            #     self.file_history.total_length,
-            # )
 
         yield HorizontalScroll(*self.file_views.values())
 
     def on_mount(self):
-        # self.focus_pane(self._curr_pane)
-        pass
+        self.focus_pane(self._curr_pane)
 
     def focus_pane(self, next_pane):
         num_panes = len(self.file_views.keys())
         next_pane = min(max(0, next_pane), num_panes-1)
-        list(self.file_views.values())[next_pane].focus()
+        list(self.file_views.values())[next_pane].fv.focus()
         self._curr_pane = next_pane
 
     def on_file_diff_view_parent_command(self, command):
