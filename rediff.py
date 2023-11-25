@@ -2,8 +2,9 @@ import click
 from collections import OrderedDict
 
 from textual.app import App, ComposeResult
-from textual.containers import HorizontalScroll
-
+from textual.containers import HorizontalScroll, Vertical
+from textual.widget import Widget
+from textual.widgets import Label, Markdown
 
 import db
 from filediffview import FileDiffView
@@ -17,11 +18,16 @@ class SingleFileAllCommits(HorizontalScroll):
 
     def compose(self):
         for file_commit in self.file_history.file_commits.values():
-            self.file_views[file_commit.sha] = FileDiffView(
+            self.file_views[file_commit.sha] = CommitFilePane(
                 file_commit,
-                self.file_history.all_patches,
-                self.file_history.total_length,
+                self.file_history,
             )
+            # self.file_views[file_commit.sha] = FileDiffView(
+            #     file_commit,
+            #     self.file_history.all_patches,
+            #     self.file_history.total_length,
+            # )
+
         yield HorizontalScroll(*self.file_views.values())
 
     def on_mount(self):
@@ -44,8 +50,25 @@ class SingleFileAllCommits(HorizontalScroll):
             self.focus_pane(self._curr_pane + 1)
         elif command.cmd == "cursor_move":
             print("cursor down")
-            for fv in self.file_views.values():
-                fv.move_cursor(command.data["location"])
+            for cp in self.file_views.values():
+                cp.fv.move_cursor(command.data["location"])
+
+class CommitFilePane(Vertical):
+    def __init__(self, file_commit, file_history):
+        super().__init__()
+        self.file_commit = file_commit
+        self.file_history = file_history
+
+    def compose(self):
+        yield Label(f"{self.file_commit.commit.short}\n"
+                    f"{self.file_commit.commit.summary}")
+        yield Label(f"{self.file_commit.file_name}")
+        self.fv = FileDiffView(
+                self.file_commit,
+                self.file_history.all_patches,
+                self.file_history.total_length,
+            )
+        yield self.fv
 
 class Rediff(App):
     CSS_PATH = "app.tcss"

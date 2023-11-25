@@ -5,6 +5,9 @@ SingleFileAllCommits {
     padding: 1;
 }
 
+CommitFilePane {
+}
+
 FileDiffView {
 }
 

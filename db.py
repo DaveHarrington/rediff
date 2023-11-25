@@ -138,13 +138,15 @@ class FileCommit:
 class Commit:
     def __init__(self, commit_obj):
         self.sha = commit_obj.hexsha
-        self.title = commit_obj.summary
+        self.short = commit_obj.hexsha[:8]
+        self.summary = commit_obj.summary
+        self.message = commit_obj.message
         self.changed_files = []
         self.commit_obj = commit_obj
 
     def __str__(self):
         return (f"commit: {self.sha}\n"
-               f"title: {self.title}\n"
+               f"summary: {self.summary}\n"
                f"num files: {len(self.changed_files)}")
 
 class GitData:
