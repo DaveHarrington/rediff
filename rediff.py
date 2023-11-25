@@ -70,13 +70,34 @@ class Rediff(App):
     def __init__(self, repo_path, base_ref):
         super().__init__()
         self.gitdata = db.GitData(repo_path, base_ref)
+        self._curr_file = 0
 
     def compose(self) -> ComposeResult:
-        self.file_views = {}
-        for file_history in [self.gitdata.get_file_history(0)]:
-            file1 = SingleFileAllCommits(file_history)
+        file_history = self.gitdata.get_file_history(self._curr_file)
+        self.file_view = SingleFileAllCommits(file_history)
+        yield self.file_view
 
-        yield file1
+    def show_file(self, file_num_):
+        num_files = len(self.gitdata.file_histories)
+        file_num = min(num_files-1, max(0, file_num_))
+        if file_num != file_num_:
+            return
+        self.file_view.remove()
+
+        file_history = self.gitdata.get_file_history(self._curr_file)
+        self.file_view = SingleFileAllCommits(file_history)
+        self.file_view.mount()
+        self._curr_file = file_num
+        self.mount(self.file_view)
+
+    def on_file_diff_view_parent_command(self, command):
+        print("here 2")
+        if command.cmd == "focus_file_prev":
+            print("prev file")
+            self.show_file(self._curr_file - 1)
+        if command.cmd == "focus_file_next":
+            print("next file")
+            self.show_file(self._curr_file + 1)
 
 @click.command()
 @click.argument('base_ref', type=str)
