@@ -79,7 +79,7 @@ class FileDiffView(TextArea):
             return Strip.blank(self.size.width)
         elif line_string.startswith("x"):
             # Placeholder line for a later addition
-            return Strip.blank(self.size.width)
+            line.stylize("on blue")
         if line_string.startswith("+"):
             line.stylize("on green")
         elif line_string.startswith("-"):

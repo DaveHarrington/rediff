@@ -6,7 +6,7 @@ class FileHistory:
         self._orig_file_name = None
         self._current_file_name = None
         self.file_commits = OrderedDict()
-        self.all_patches = None
+        self.all_patches = OrderedDict()
         self.total_length = None
 
     def fill(self, commit, file_name=None):
@@ -17,7 +17,20 @@ class FileHistory:
         self.file_commits[commit.sha] = FileCommit(file_name, commit)
 
     def post_load(self):
-        self.all_patches = {commit: fc.patches for (commit, fc) in self.file_commits.items()}
+        for i, (commit, fc) in enumerate(self.file_commits.items()):
+            if i < len(self.file_commits):
+                for p in fc.patches:
+                    if p["type"] == "del":
+                        for fc_ in list(self.file_commits.values())[i+1:]:
+                            for p_ in fc_.patches:
+                                if p_["line_start"] > p["line_start"]:
+                                    p_len = p["line_end"] - p["line_start"]
+                                    p_["line_start"] += p_len
+                                    p_["line_end"] += p_len
+
+
+            self.all_patches[commit] = fc.patches
+
         first_commit = list(self.file_commits.keys())[0]
         first_len = len(self.file_commits[first_commit].diff_text or "")
         extra = 0
@@ -48,6 +61,7 @@ class FileCommit:
     def get_content(self, all_patches, total_length):
         skips = {}
         seen_our_commit = False
+
         for commit, patches in all_patches.items():
             if commit == self.sha:
                 seen_our_commit = True
@@ -63,18 +77,17 @@ class FileCommit:
                             patch['line_end'] - patch['line_start'])
 
         text = []
-        total_pointer = diff_pointer = 0
-        while total_pointer < total_length:
-            skip_len = skips.get(total_pointer)
+        diff_pointer = 0
+        while len(text) < total_length:
+
+            skip_len = skips.get(len(text))
             if skip_len is not None:
                 for j in range(skip_len):
                     text.append('x')
-                total_pointer += skip_len
                 continue
 
             text.append(self.diff_text[diff_pointer])
             diff_pointer += 1
-            total_pointer += 1
 
         return '\n'.join(text)
 
@@ -97,6 +110,8 @@ class FileCommit:
             for line in parent_blob.data_stream.read().decode('utf-8').splitlines():
                 # add space for patch format (no change)
                 text.append(f' {line}')
+
+        text = text[1:]
 
         patches = []
         patch_add = patch_del = None
