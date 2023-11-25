@@ -54,11 +54,13 @@ class FileCommit:
             elif not seen_our_commit:
                 for patch in patches:
                     if patch['type'] == 'del':
-                        skips[patch['line_start']] = patch['line_end'] - patch['line_start']
+                        skips[patch['line_start']] = (
+                            patch['line_end'] - patch['line_start'])
             else:
                 for patch in patches:
                     if patch['type'] == 'add':
-                        skips[patch['line_start']] = patch['line_end'] - patch['line_start']
+                        skips[patch['line_start']] = (
+                            patch['line_end'] - patch['line_start'])
 
         text = []
         total_pointer = diff_pointer = 0
@@ -101,7 +103,7 @@ class FileCommit:
             if patch_start is not None:
                 patches.append({
                     'type': patch_type,
-                    'line_start': patch_add,
+                    'line_start': patch_start,
                     'line_end': line_no,
                 })
             return None
@@ -250,7 +252,7 @@ class GitData:
             all_patches = fh.all_patches
             total_length = fh.total_length
             for fc in fh.file_commits.values():
-                fc.get_content(all_patches, total_length)
+                fc.get_content(all_patches, total_length) # exercise this code
 
 
         self.file_histories = file_histories
