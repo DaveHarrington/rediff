@@ -208,9 +208,7 @@ class GitData:
                         if c_inner == commit:
                             break
                         fh.fill(c_inner, None)
-
                     fh.fill(commit, cfile)
-
                     file_histories[cfile.b_path] = fh
 
                 elif cfile.change_type == "M":
@@ -223,6 +221,7 @@ class GitData:
                             if c_inner == commit:
                                 break
                             fh.fill(c_inner, cfile.b_path)
+                        fh.fill(commit, cfile.b_path)
                         file_histories[cfile.b_path] = fh
                     else:
                         fh.fill(commit, cfile.b_path)
@@ -236,6 +235,8 @@ class GitData:
                             if c_inner == commit:
                                 break
                             fh.fill(c_inner, cfile.a_path)
+                        fh.fill(commit, cfile.b_path)
+                        file_histories[cfile.b_path] = fh
                     else:
                         fh.fill(commit, cfile.a_path)
 
@@ -248,6 +249,8 @@ class GitData:
                             if c_inner == commit:
                                 break
                             fh.fill(c_inner, cfile.a_path)
+                        fh.fill(commit, cfile.b_path)
+                        file_histories[cfile.b_path] = fh
                     else:
                         fh.fill(commit, cfile.b_path)
 

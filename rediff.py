@@ -31,7 +31,12 @@ class SingleFileAllCommits(HorizontalScroll):
     def focus_pane(self, next_pane):
         num_panes = len(self.file_views.keys())
         next_pane = min(max(0, next_pane), num_panes-1)
-        list(self.file_views.values())[next_pane].fv.focus()
+        for i, commit_file_pane in enumerate(self.file_views.values()):
+            if i == next_pane:
+                commit_file_pane.fv.show_cursor = True
+                commit_file_pane.fv.focus()
+            else:
+                commit_file_pane.fv.show_cursor = False
         self._curr_pane = next_pane
 
     def on_file_diff_view_parent_command(self, command):

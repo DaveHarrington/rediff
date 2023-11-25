@@ -17,6 +17,7 @@ class FileDiffView(TextArea):
         self.file_name = file_commit.file_name
         self.show_line_numbers = False
         self.text = file_commit.get_content(all_patches, total_length)
+        self.show_cursor = True
 
     def _on_key(self, event):
         event.prevent_default()
@@ -86,7 +87,6 @@ class FileDiffView(TextArea):
             line.stylize("on red")
         elif line_string.startswith(" "):
             pass
-        line_string = line_string[1:]
 
         line_character_count = len(line)
         line.tab_size = self.indent_width
@@ -159,9 +159,9 @@ class FileDiffView(TextArea):
         )
 
         if cursor_row == line_index:
-            draw_cursor = not self.cursor_blink or (
+            draw_cursor = self.show_cursor and (not self.cursor_blink or (
                 self.cursor_blink and self._cursor_blink_visible
-            )
+            ))
             if draw_matched_brackets:
                 matching_bracket_style = theme.bracket_matching_style if theme else None
                 if matching_bracket_style:
@@ -211,7 +211,7 @@ class FileDiffView(TextArea):
         console = self.app.console
         gutter_segments = console.render(gutter)
         text_segments = console.render(
-            line,
+            line[1:],
             console.options.update_width(expanded_length),
         )
 
