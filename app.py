@@ -17,6 +17,8 @@ class SingleFileAllCommits(HorizontalScroll):
         for file_commit in self.file_history.file_commits.values():
             self.file_views[file_commit.sha] = FileDiffView(
                 file_commit,
+                self.file_history.all_patches,
+                self.file_history.total_length,
             )
         yield HorizontalScroll(*self.file_views.values())
 
@@ -27,7 +29,8 @@ class FileDiffView(TextArea):
         self.text = file_commit.get_file_contents()
 
     def on_mount(self):
-        self.focus_pane(self._curr_pane)
+        # self.focus_pane(self._curr_pane)
+        pass
 
     def focus_pane(self, next_pane):
         num_panes = len(self.file_views.keys())
