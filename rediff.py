@@ -39,9 +39,13 @@ class SingleFileAllCommits(HorizontalScroll):
         if command.cmd == "focus_pane_left":
             print("move left")
             self.focus_pane(self._curr_pane - 1)
-        if command.cmd == "focus_pane_right":
+        elif command.cmd == "focus_pane_right":
             print("move right")
             self.focus_pane(self._curr_pane + 1)
+        elif command.cmd == "cursor_move":
+            print("cursor down")
+            for fv in self.file_views.values():
+                fv.move_cursor(command.data["location"])
 
 class Rediff(App):
     CSS_PATH = "app.tcss"
