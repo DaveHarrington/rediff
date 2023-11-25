@@ -7,9 +7,10 @@ from rich.text import Text
 
 class FileDiffView(TextArea):
     class ParentCommand(Message):
-        def __init__(self, cmd):
+        def __init__(self, cmd, data=None):
             super().__init__()
             self.cmd = cmd
+            self.data = data
 
     def __init__(self, file_commit, all_patches, total_length):
         super().__init__()
@@ -21,9 +22,19 @@ class FileDiffView(TextArea):
         event.prevent_default()
 
         if event.character == "j":
-            self.move_cursor_relative(rows=1) # Move down
+            self.post_message(
+                self.ParentCommand(
+                    "cursor_move",
+                    {"location": self.get_cursor_down_location()}
+                ),
+            )
         elif event.character == "k":
-            self.move_cursor_relative(rows=-1) # Move up
+            self.post_message(
+                self.ParentCommand(
+                    "cursor_move",
+                    {"location": self.get_cursor_up_location()}
+                ),
+            )
         elif event.character == "h":
             self.move_cursor_relative(columns=-1) # Move left
         elif event.character == "l":
