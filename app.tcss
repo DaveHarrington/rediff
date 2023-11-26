@@ -1,5 +1,5 @@
 SingleFileAllCommits {
-    height: 50%;
+    height: 100%;
     margin: 1;
     min-width: 50;
     padding: 1;
