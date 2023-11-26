@@ -1,3 +1,4 @@
 click
 textual
 textual-dev
+GitPython
