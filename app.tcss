@@ -1,6 +1,5 @@
 SingleFileAllCommits {
-    layout: horizontal;
-    height: 50;
+    height: 50%;
     margin: 1;
     min-width: 50;
     padding: 1;
@@ -8,3 +7,4 @@ SingleFileAllCommits {
 
 FileDiffView {
 }
+
