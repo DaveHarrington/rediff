@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import os
 
-from git import Repo, GitCommandError
+from git import Repo
 
 from rediff.db import GitData, PatchType
 
