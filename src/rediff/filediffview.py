@@ -10,7 +10,7 @@ from rich.segment import Segment
 from rich.style import Style
 from rich.text import Text
 
-from db import FileCommit, PatchInfo
+from rediff.db import FileCommit, PatchInfo
 
 class Cmd(str, Enum):
     FOCUS_PANE_LEFT = "focus_pane_left"
