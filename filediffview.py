@@ -1,38 +1,52 @@
-from textual.widgets import TextArea, Static
+from typing import Dict, List, Optional, Tuple, OrderedDict
+from enum import Enum
+
+from textual import events
+from textual.widgets import TextArea, Static, _text_area
+from textual.document._document import _utf8_encode
 from textual.strip import Strip
 from textual.message import Message
 from rich.segment import Segment
 from rich.style import Style
 from rich.text import Text
 
+from db import FileCommit, PatchInfo
+
+class Cmd(str, Enum):
+    FOCUS_PANE_LEFT = "focus_pane_left"
+    FOCUS_PANE_RIGHT = "focus_pane_right"
+    FOCUS_FILE_PREV = "focus_file_prev"
+    FOCUS_FILE_NEXT = "focus_file_next"
+    CURSOR_MOVE = "cursor_move"
+
 class FileDiffView(TextArea):
     class ParentCommand(Message):
-        def __init__(self, cmd, data=None):
+        def __init__(self, cmd: Cmd, data: Optional[Dict[str, Tuple[int, int]]] = None) -> None:
             super().__init__()
             self.cmd = cmd
             self.data = data
 
-    def __init__(self, file_commit, all_patches, total_length):
+    def __init__(self, file_commit: FileCommit, all_patches: OrderedDict[str, List[PatchInfo]], total_length: int):
         super().__init__()
         self.file_name = file_commit.file_name
         self.show_line_numbers = False
         self.text = file_commit.get_content(all_patches, total_length)
         self.show_cursor = True
 
-    def _on_key(self, event):
+    def _on_key(self, event: events.Key):
         event.prevent_default()
 
         if event.character == "j":
             self.post_message(
                 self.ParentCommand(
-                    "cursor_move",
+                    Cmd.CURSOR_MOVE,
                     {"location": self.get_cursor_down_location()}
                 ),
             )
         elif event.character == "k":
             self.post_message(
                 self.ParentCommand(
-                    "cursor_move",
+                    Cmd.CURSOR_MOVE,
                     {"location": self.get_cursor_up_location()}
                 ),
             )
@@ -42,13 +56,13 @@ class FileDiffView(TextArea):
             self.move_cursor_relative(columns=1) # Move right
 
         elif event.character == "H":
-            self.post_message(self.ParentCommand("focus_pane_left"))
+            self.post_message(self.ParentCommand(Cmd.FOCUS_PANE_LEFT))
         elif event.character == "L":
-            self.post_message(self.ParentCommand("focus_pane_right"))
+            self.post_message(self.ParentCommand(Cmd.FOCUS_PANE_RIGHT))
         elif event.character == "K":
-            self.post_message(self.ParentCommand("focus_file_prev"))
+            self.post_message(self.ParentCommand(Cmd.FOCUS_FILE_PREV))
         elif event.character == "J":
-            self.post_message(self.ParentCommand("focus_file_next"))
+            self.post_message(self.ParentCommand(Cmd.FOCUS_FILE_NEXT))
 
     def render_line(self, widget_y: int) -> Strip:
         """Render a single line of the TextArea. Called by Textual.
@@ -103,7 +117,7 @@ class FileDiffView(TextArea):
         highlights = self._highlights
         if highlights and theme:
             line_bytes = _utf8_encode(line_string)
-            byte_to_codepoint = build_byte_to_codepoint_dict(line_bytes)
+            byte_to_codepoint = _text_area.build_byte_to_codepoint_dict(line_bytes)
             get_highlight_from_theme = theme.syntax_styles.get
             line_highlights = highlights[line_index]
             for highlight_start, highlight_end, highlight_name in line_highlights:
