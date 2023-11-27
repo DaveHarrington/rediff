@@ -35,8 +35,7 @@ class FileCommit:
         self.sha = commit.hexsha
         self.file_name = file_name
         self.commit = commit
-        self.patches: List[PatchInfo] = []
-        self.diff_text = self.load_file_content()
+        self.diff_text = self._get_diff_text()
 
     def get_content(self, all_patches, total_length):
         skips = {}
@@ -71,61 +70,56 @@ class FileCommit:
 
         return '\n'.join(text)
 
-    def load_file_content(self) -> List[str]:
+    def _get_diff_text(self) -> List[str]:
         parent_commit = self.commit.commit_obj.parents[0]
 
-        diffs = parent_commit.diff(
-            self.commit.commit_obj,
-            paths=self.file_name,
-            create_patch=True,
-            unified=999999,
-        )
+        all_diff_wrappers = parent_commit.diff(self.commit.commit_obj, create_patch=True, unified=999999)
 
-        if diffs:
-            text = diffs[0].diff.decode('utf-8').splitlines()
+        parent_file_name = self.file_name
+        diff_bytes = None
+        for diff_w in all_diff_wrappers:
+            if diff_w.rename_to == self.file_name: # renamed
+                diff_bytes = diff_w.diff
+                parent_file_name = diff_w.rename_from
+            elif diff_w.b_path == self.file_name:
+                diff_bytes = diff_w.diff
+
+        text = []
+        if diff_bytes:
+            text = diff_bytes.decode('utf-8').splitlines()[1:]
         else:
-            parent_blob = parent_commit.tree / self.file_name
-            text = []
+            parent_blob = parent_commit.tree / parent_file_name
             for line in parent_blob.data_stream.read().decode('utf-8').splitlines():
                 text.append(f' {line}')
 
-        text = text[1:]
+        return text
 
+    def get_patches(self) -> List[PatchInfo]:
         patches: List[PatchInfo] = []
         patch_add = patch_del = None
+
         def finish_patch(patch_type, patch_start, line_no):
             if patch_start is not None:
-                patches.append({
-                    'type': patch_type,
-                    'line_start': patch_start,
-                    'line_end': line_no,
-                })
-                return None
+                patches.append(PatchInfo(patch_type, patch_start, line_no))
+            return None
 
-        for line_no, line in enumerate(text):
+        for line_no, line in enumerate(self.diff_text):
             if line.startswith('+'):
-                patch_del = self.finish_patch(PatchType.DELETE, patch_del, line_no)
+                patch_del = finish_patch(PatchType.DELETE, patch_del, line_no)
                 if patch_add is None:
                     patch_add = line_no
             elif line.startswith('-'):
-                patch_add = self.finish_patch(PatchType.ADD, patch_add, line_no)
+                patch_add = finish_patch(PatchType.ADD, patch_add, line_no)
                 if patch_del is None:
                     patch_del = line_no
             else:
-                patch_add = self.finish_patch(PatchType.ADD, patch_add, line_no)
-                patch_del = self.finish_patch(PatchType.DELETE, patch_del, line_no)
+                patch_add = finish_patch(PatchType.ADD, patch_add, line_no)
+                patch_del = finish_patch(PatchType.DELETE, patch_del, line_no)
 
-        self.finish_patch(PatchType.ADD, patch_add, line_no+1)
-        self.finish_patch(PatchType.DELETE, patch_del, line_no+1)
+        finish_patch(PatchType.ADD, patch_add, line_no+1)
+        finish_patch(PatchType.DELETE, patch_del, line_no+1)
 
-        self.patches = patches
-
-        return text
-
-    def finish_patch(self, patch_type: PatchType, patch_start: Optional[int], line_no: int) -> Optional[int]:
-        if patch_start is not None:
-            self.patches.append(PatchInfo(patch_type, patch_start, line_no))
-        return None
+        return patches
 
     def __str__(self) -> str:
         return f"FileCommit: {self.file_name} @sha: {self.sha}"
@@ -138,7 +132,6 @@ class FileHistory:
         self._orig_file_name: Optional[str] = None
         self._current_file_name: Optional[str] = None
         self.file_commits: OrderedDict[str, FileCommit] = OrderedDict()
-        self.all_patches: OrderedDict[str, List[PatchInfo]] = OrderedDict()
 
     def fill(self, commit: CommitWrapper, file_name: Optional[str] = None) -> None:
         if not self._orig_file_name:
@@ -150,32 +143,35 @@ class FileHistory:
 
         self.file_commits[commit.hexsha] = FileCommit(self._current_file_name, commit)
 
-    def post_load(self):
+    def get_all_patches(self) -> OrderedDict[str, List[PatchInfo]]:
+        all_patches: OrderedDict[str, List[PatchInfo]] = OrderedDict()
         for i, (commit, fc) in enumerate(self.file_commits.items()):
             if i < len(self.file_commits):
-                for p in fc.patches:
-                    if p["type"] == "del":
+                for p in fc.get_patches():
+                    if p.type == PatchType.DELETE:
                         for fc_ in list(self.file_commits.values())[i+1:]:
-                            for p_ in fc_.patches:
-                                if p_["line_start"] > p["line_start"]:
-                                    p_len = p["line_end"] - p["line_start"]
-                                    p_["line_start"] += p_len
-                                    p_["line_end"] += p_len
+                            for p_ in fc_.get_patches():
+                                if p_.line_start > p.line_start:
+                                    p_len = p.line_end - p.line_start
+                                    p_.line_start += p_len
+                                    p_.line_end += p_len
 
 
-            self.all_patches[commit] = fc.patches
+            all_patches[commit] = fc.get_patches()
+        return all_patches
 
+    def get_total_length(self) -> int:
         first_commit = list(self.file_commits.keys())[0]
         first_len = len(self.file_commits[first_commit].diff_text or "")
         extra = 0
-        for i, patches in enumerate(self.all_patches.values()):
+        for i, patches in enumerate(self.get_all_patches().values()):
             if i == 0:
                 continue
             for patch in patches:
-                if patch['type'] == 'add':
-                    extra += patch['line_end'] - patch['line_start']
+                if patch.type == PatchType.ADD:
+                    extra += patch.line_end - patch.line_start
 
-        self.total_length = first_len + extra
+        return first_len + extra
 
     def __str__(self) -> str:
         return (f"File history: {self._orig_file_name}, "
@@ -268,14 +264,14 @@ class GitData:
                     fh = file_histories.get(cfile.a_path)
                     if not fh:
                         fh = FileHistory()
+                        fh._orig_file_name = cfile.a_path
                         # First time seeing this file. Populate earlier history.
                         for c_inner in commits:
                             if c_inner == commit:
                                 break
                             fh.fill(c_inner, cfile.a_path)
                         fh.fill(commit, cfile.b_path)
-                        assert isinstance(cfile.b_path, str)
-                        file_histories[cfile.b_path] = fh
+                        file_histories[cfile.a_path] = fh
                     else:
                         fh.fill(commit, cfile.b_path)
 
@@ -288,14 +284,11 @@ class GitData:
                     fh.fill(commit)
 
         for fh in file_histories.values():
-            fh.post_load()
-
-        for fh in file_histories.values():
-            all_patches = fh.all_patches
-            total_length = fh.total_length
+            all_patches = fh.get_all_patches()
+            total_length = fh.get_total_length()
             for fc in fh.file_commits.values():
                 fc.get_content(all_patches, total_length) # exercise this code
-        
+
         self.file_histories = file_histories
 
     def get_file_history(self, file_no: int) -> FileHistory:
