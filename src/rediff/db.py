@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 from enum import Enum
 
 from git import Repo, NULL_TREE

@@ -3,8 +3,7 @@ from collections import OrderedDict
 
 from textual.app import App, ComposeResult
 from textual.containers import HorizontalScroll, Vertical
-from textual.widget import Widget
-from textual.widgets import Label, Markdown
+from textual.widgets import Label
 
 from rediff.db import GitData, FileHistory, FileCommit
 from rediff.filediffview import FileDiffView, Cmd
