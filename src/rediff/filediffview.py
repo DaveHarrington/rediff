@@ -2,11 +2,10 @@ from typing import Dict, List, Optional, Tuple, OrderedDict
 from enum import Enum
 
 from textual import events
-from textual.widgets import TextArea, Static, _text_area
+from textual.widgets import TextArea, _text_area
 from textual.document._document import _utf8_encode
 from textual.strip import Strip
 from textual.message import Message
-from rich.segment import Segment
 from rich.style import Style
 from rich.text import Text
 
