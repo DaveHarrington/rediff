@@ -2,8 +2,7 @@
 
 
 ## Setup Dev
-python3 -m venv .venv
+poetry install
 
-source .venv/bin/activate
-
-pip install -r requirements.txt
+poetry run textual run --dev src/rediff/cli.py -C <PATH TO REPO> main
+poetry run textual console

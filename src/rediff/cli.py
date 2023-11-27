@@ -6,8 +6,8 @@ from textual.containers import HorizontalScroll, Vertical
 from textual.widget import Widget
 from textual.widgets import Label, Markdown
 
-from db import GitData, FileHistory, FileCommit
-from filediffview import FileDiffView, Cmd
+from rediff.db import GitData, FileHistory, FileCommit
+from rediff.filediffview import FileDiffView, Cmd
 
 class SingleFileAllCommits(HorizontalScroll):
     def __init__(self, file_history: FileHistory) -> None:
@@ -105,9 +105,9 @@ class Rediff(App):
 @click.command()
 @click.argument('base_ref', type=str)
 @click.option('-C', '--repo_path', type=str, default='.', help='The repository path (optional)')
-def main(base_ref: str, repo_path: str) -> None:
+def app(base_ref: str, repo_path: str) -> None:
     app: Rediff = Rediff(repo_path, base_ref)
     app.run()
 
 if __name__ == "__main__":
-    main()
+    app()
