@@ -1,13 +1,11 @@
-name: Lint
-
+name: Python Tests
 on: [push]
-
 jobs:
-  mypy:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
+      - name: Prepare repo
+        uses: actions/checkout@master
       - name: Setup Python
         uses: actions/setup-python@v1
         with:
@@ -21,14 +19,5 @@ jobs:
           key: venv-${{ hashFiles('poetry.lock') }}
       - name: Install the project dependencies
         run: poetry install
-      - name: Run mypy
-        uses: sasanquaneuf/mypy-github-action@releases/v1
-        with:
-          checkName: 'mypy'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  ruff:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: chartboost/ruff-action@v1
+      - name: Run Python Tests
+        run: poetry run python -m unittest discover tests

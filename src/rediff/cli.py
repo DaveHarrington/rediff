@@ -60,8 +60,8 @@ class CommitFilePane(Vertical):
         yield Label(f"{self.file_commit.file_name}")
         self.fv = FileDiffView(
                 self.file_commit,
-                self.file_history.all_patches,
-                self.file_history.total_length,
+                self.file_history.get_all_patches(),
+                self.file_history.get_total_length(),
             )
         yield self.fv
 
